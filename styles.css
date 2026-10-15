@@ -147,3 +147,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
   .mobile-nav select{flex:1;width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);font-size:15px;font-weight:600}
 }
 @media(min-width:901px){.mobile-nav{display:none!important}}
+
+/* Solicitudes de usuarios: acciones visibles y táctiles */
+.pending-user-list{display:grid;gap:12px}.pending-user-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:14px;background:#fff}.pending-user-info{display:grid;gap:4px}.pending-user-info strong{font-size:18px}.pending-user-info span,.pending-user-info small{color:var(--muted)}.pending-actions{margin:0;display:flex;gap:8px}.pending-actions button{min-height:42px}.user-kpi-card{transition:transform .15s,box-shadow .15s}.user-kpi-card:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+@media(max-width:650px){.pending-user-card{display:block}.pending-actions{margin-top:12px}.pending-actions button{width:100%;display:block}.pending-actions button+button{margin-top:8px}.active-users-panel .table-wrap{overflow-x:auto}}
