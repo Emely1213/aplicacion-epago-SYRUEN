@@ -16,7 +16,19 @@ const defaultOffices=[
 {codigo:"EP001",cliente:"EPAGO",oficina:"ePago Cali",ip:"10.30.1.20",serial:"HIK-EPA-001",sim:"3000000003",celular:"3100000003",ciudad:"Cali",direccion:"Avenida 6 # 20-15",departamento:"Valle del Cauca",regional:"Suroccidente",ponal:"PONAL-003",cupo:"",canales:24,dvrs:3,coordinador:{nombre:"Coordinador Suroccidente",celular:"3110000003",correo:"coordinador.suroccidente@empresa.com"},regionalContacto:{nombre:"Regional Suroccidente",celular:"3120000003",correo:"regional.suroccidente@empresa.com"}}
 ];
 function load(k,def=[]){try{return JSON.parse(localStorage.getItem(k))??def}catch{return def}}
-function save(k,v){localStorage.setItem(k,JSON.stringify(v)); if(window.SYRUEN_SYNC){ if(k===STORE) window.SYRUEN_SYNC.saveData(v); if(k===USERS) window.SYRUEN_SYNC.saveUsers(v); }}
+function save(k,v){
+  localStorage.setItem(k,JSON.stringify(v));
+  if(window.SYRUEN_SYNC){
+    if(k===STORE) return window.SYRUEN_SYNC.saveData(v);
+    if(k===USERS) return window.SYRUEN_SYNC.saveUsers(v);
+  }
+  return Promise.resolve(true);
+}
+function nextUsername(list){
+  const nums=(list||[]).map(x=>String(x.username||"").match(/^SYR-(\\d+)$/i)).filter(Boolean).map(m=>Number(m[1]));
+  const next=(nums.length?Math.max(...nums):0)+1;
+  return "SYR-"+String(next).padStart(4,"0");
+}
 function db(){let d=load(STORE,null);if(!d){d={offices:defaultOffices,tickets:[],comments:[],implementations:[],dismantles:[],inventory:[],resolved:[],visitors:[],gestiones:[],crypto:[],cctvReports:[],userNotifications:[]};save(STORE,d)}
 if(!d.userNotifications)d.userNotifications=[];if(!d.cctvReports)d.cctvReports=[];return d}
 function users(){let u=load(USERS,null);if(!u){u=[{username:"admin",password:"admin123",name:"Administrador principal",role:"omt",email:"",status:"active",mainAdmin:true}];save(USERS,u)}else{let changed=false;u=u.map(x=>{if(x.status===undefined){x.status="active";changed=true}if(x.username==="admin"){x.mainAdmin=true;x.status="active";changed=true}return x});if(changed)save(USERS,u)}return u}
@@ -54,7 +66,7 @@ $("#recover").onclick=()=>{let x=users().find(v=>v.username===$("#fu").value.tri
 $("#backLogin").onclick=login;$("#backWelcome").onclick=splash
 }
 function register(){
-let next="SYR-"+String(users().length+1).padStart(4,"0");
+let next=nextUsername(users());
 app.innerHTML=`<div class="auth"><div class="auth-card register-card">
 <div class="brand"><div class="brand-mark">SY</div><b>SYRUEN</b></div>
 <h2>Registro de usuario</h2>
@@ -70,7 +82,26 @@ ${field("Contraseña","password","password")}
 </div>
 <div class="actions"><button class="primary" id="saveUser">Registrar usuario</button><button class="secondary" id="cancel">Volver al bienvenida</button></div>
 </div></div>`;
-$("#saveUser").onclick=()=>{let u=users(),x={};["name","cargo","personalEmail","email","phone","whatsapp","username","password"].forEach(k=>x[k]=$("#"+k).value);x.role=$("#role").value;if(!x.password||!x.name||!x.email)return toast("Complete los campos obligatorios");x.status="pending";x.requestedAt=new Date().toISOString();u.push(x);save(USERS,u);toast("Solicitud enviada. Queda pendiente de aprobación.");login()};
+$("#saveUser").onclick=async()=>{
+  const btn=$("#saveUser"); if(btn) btn.disabled=true;
+  try{
+    let u=users(),x={};
+    ["name","cargo","personalEmail","email","phone","whatsapp","username","password"].forEach(k=>x[k]=$("#"+k).value.trim());
+    x.role=$("#role").value;
+    if(!x.password||!x.name||!x.email){if(btn)btn.disabled=false;return toast("Complete los campos obligatorios");}
+    if(u.some(v=>String(v.username).toLowerCase()===String(x.username).toLowerCase())){if(btn)btn.disabled=false;return toast("Ese usuario ya existe. Genere un nuevo usuario.");}
+    x.status="pending"; x.requestedAt=new Date().toISOString();
+    u.push(x);
+    const ok=await save(USERS,u);
+    if(!ok) throw new Error("Supabase no confirmó el guardado");
+    toast("Solicitud enviada y guardada correctamente.");
+    login();
+  }catch(e){
+    console.error(e);
+    if(btn)btn.disabled=false;
+    toast("No se pudo guardar el usuario. Revise la conexión con Supabase.");
+  }
+};
 $("#cancel").onclick=splash
 }
 function field(label,id,type="text"){return `<div class="field"><label>${label}</label><input id="${id}" type="${type}"></div>`}
@@ -236,8 +267,22 @@ function userApprovals(c){
  <div class="card table-wrap"><h3>Solicitudes pendientes</h3><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>${pending.map(x=>`<tr><td>${esc(x.username)}</td><td>${esc(x.name)}</td><td>${esc(roles[x.role]?.name||x.role)}</td><td>${esc(x.email)}</td><td>${x.requestedAt?new Date(x.requestedAt).toLocaleString("es-CO"):""}</td><td><button class="primary small" onclick="approveUser('${esc(x.username)}')">Aprobar</button> <button class="danger small" onclick="rejectUser('${esc(x.username)}')">Rechazar</button></td></tr>`).join("")||`<tr><td colspan="6">No hay solicitudes pendientes.</td></tr>`}</tbody></table></div>
  <div class="card table-wrap" style="margin-top:14px"><h3>Usuarios registrados</h3><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Estado</th></tr></thead><tbody>${u.map(x=>`<tr><td>${esc(x.username)}</td><td>${esc(x.name)}</td><td>${esc(roles[x.role]?.name||x.role)}</td><td>${esc(x.email)}</td><td>${x.mainAdmin?"Administrador principal":x.status}</td></tr>`).join("")}</tbody></table></div>`;
 }
-window.approveUser=username=>{let u=users(),x=u.find(v=>v.username===username);if(!x)return;if(!confirm(`¿Aprobar a ${x.name} (${x.username})?`))return;x.status="active";x.approvedAt=new Date().toISOString();x.approvedBy=current.username;save(USERS,u);notifyUser(x,"approved");userApprovals($("#content"));toast("Usuario aprobado. Se registró la notificación de aprobación.")};
-window.rejectUser=username=>{let u=users(),x=u.find(v=>v.username===username);if(!x)return;let reason=prompt("Motivo del rechazo (opcional):","");if(reason===null)return;x.status="rejected";x.rejectedAt=new Date().toISOString();x.rejectedBy=current.username;x.rejectionReason=reason;save(USERS,u);notifyUser(x,"rejected",reason);userApprovals($("#content"));toast("Usuario rechazado. Se registró la notificación.")};
+window.approveUser=async username=>{
+  let u=users(),x=u.find(v=>v.username===username);if(!x)return;
+  if(!confirm(`¿Aprobar a ${x.name} (${x.username})?`))return;
+  x.status="active";x.approvedAt=new Date().toISOString();x.approvedBy=current.username;
+  const ok=await save(USERS,u); if(!ok)return toast("No se pudo guardar la aprobación en Supabase.");
+  notifyUser(x,"approved");
+  userApprovals($("#content"));toast("Usuario aprobado y guardado correctamente.");
+};
+window.rejectUser=async username=>{
+  let u=users(),x=u.find(v=>v.username===username);if(!x)return;
+  let reason=prompt("Motivo del rechazo (opcional):","");if(reason===null)return;
+  x.status="rejected";x.rejectedAt=new Date().toISOString();x.rejectedBy=current.username;x.rejectionReason=reason;
+  const ok=await save(USERS,u); if(!ok)return toast("No se pudo guardar el rechazo en Supabase.");
+  notifyUser(x,"rejected",reason);
+  userApprovals($("#content"));toast("Usuario rechazado y guardado correctamente.");
+};
 function notifyUser(x,type,reason=""){let d=db();d.userNotifications.push({id:"NOT-"+Date.now(),username:x.username,email:x.email,type,reason,createdAt:new Date().toISOString(),read:false});save(STORE,d)}
 
 function exportCSV(key){let a=db()[key]||[],keys=[...new Set(a.flatMap(x=>Object.keys(x)))],csv=[keys.join(","),...a.map(x=>keys.map(k=>`"${String(x[k]??"").replaceAll('"','""')}"`).join(","))].join("\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),u=URL.createObjectURL(blob),a1=document.createElement("a");a1.href=u;a1.download=key+".csv";a1.click();URL.revokeObjectURL(u)}
