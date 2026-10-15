@@ -136,3 +136,14 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(min-width:651px){
   .active-user-cards{display:none}
 }
+
+/* ===== Navegación responsive: menú desplegable en móvil ===== */
+.mobile-nav{display:none}
+@media(max-width:900px){
+  .layout{display:block}
+  .side{display:none!important}
+  .mobile-nav{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  .mobile-nav label{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+  .mobile-nav select{flex:1;width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);font-size:15px;font-weight:600}
+}
+@media(min-width:901px){.mobile-nav{display:none!important}}
