@@ -10,8 +10,8 @@
    if(!base||!key)return;
    try{const [d,u]=await Promise.all([pull(tables.data),pull(tables.users)]); if(d){localStorage.setItem('syruen_v4_data',JSON.stringify(d));} if(u){localStorage.setItem('syruen_v4_users',JSON.stringify(u));} window.SYRUEN_ONLINE=true;}catch(e){console.warn('Supabase no disponible:',e);window.SYRUEN_ONLINE=false}
   },
-  async saveData(v){try{await put(tables.data,'main',v);window.SYRUEN_ONLINE=true}catch(e){console.warn('No se pudo guardar SYRUEN:',e);window.SYRUEN_ONLINE=false}},
-  async saveUsers(v){try{await put(tables.users,'main',v);window.SYRUEN_ONLINE=true}catch(e){console.warn('No se pudieron guardar usuarios:',e);window.SYRUEN_ONLINE=false}}
+  async saveData(v){try{await put(tables.data,'main',v);window.SYRUEN_ONLINE=true;return true}catch(e){console.warn('No se pudo guardar SYRUEN:',e);window.SYRUEN_ONLINE=false;return false}},
+  async saveUsers(v){try{await put(tables.users,'main',v);window.SYRUEN_ONLINE=true;return true}catch(e){console.warn('No se pudieron guardar usuarios:',e);window.SYRUEN_ONLINE=false;return false}}
  };
  window.SYRUEN_SUPABASE_READY=window.SYRUEN_SYNC.hydrate();
 })();
