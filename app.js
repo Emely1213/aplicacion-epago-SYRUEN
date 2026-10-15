@@ -26,7 +26,7 @@ function save(k,v){
   return Promise.resolve(true);
 }
 function nextUsername(list){
-  const nums=(list||[]).map(x=>String(x.username||"").match(/^SYR-(\\d+)$/i)).filter(Boolean).map(m=>Number(m[1]));
+  const nums=(list||[]).map(x=>String(x.username||"").match(/^SYR-(\d+)$/i)).filter(Boolean).map(m=>Number(m[1]));
   const next=(nums.length?Math.max(...nums):0)+1;
   return "SYR-"+String(next).padStart(4,"0");
 }
@@ -86,16 +86,18 @@ ${field("Contraseña","password","password")}
 $("#saveUser").onclick=async()=>{
   const btn=$("#saveUser"); if(btn) btn.disabled=true;
   try{
+    // Recalcular el usuario justo al guardar para evitar duplicados si hay varios registros abiertos.
     let u=users(),x={};
-    ["name","cargo","personalEmail","email","phone","whatsapp","username","password"].forEach(k=>x[k]=$("#"+k).value.trim());
+    x.username=nextUsername(u);
+    ["name","cargo","personalEmail","email","phone","whatsapp","password"].forEach(k=>x[k]=$("#"+k).value.trim());
     x.role=$("#role").value;
     if(!x.password||!x.name||!x.email){if(btn)btn.disabled=false;return toast("Complete los campos obligatorios");}
-    if(u.some(v=>String(v.username).toLowerCase()===String(x.username).toLowerCase())){if(btn)btn.disabled=false;return toast("Ese usuario ya existe. Genere un nuevo usuario.");}
+    if(u.some(v=>String(v.username).toLowerCase()===String(x.username).toLowerCase())){x.username=nextUsername([...u,{username:x.username}]);}
     x.status="pending"; x.requestedAt=new Date().toISOString();
     u.push(x);
     const ok=await save(USERS,u);
     if(!ok) throw new Error("Supabase no confirmó el guardado");
-    toast("Solicitud enviada y guardada correctamente.");
+    toast("Solicitud enviada y guardada correctamente. Usuario: "+x.username);
     login();
   }catch(e){
     console.error(e);
@@ -260,8 +262,9 @@ function cctvReport(c){
 }
 function buildCctvHistory(arr){let groups={};arr.forEach(x=>{let k=x.date+"|"+x.cliente+"|"+x.codigo;(groups[k]??=[]).push(x)});let rows=Object.values(groups).sort((a,b)=>(b[0].date||"").localeCompare(a[0].date||"")).map(g=>{let ok=g.filter(x=>x.status==="connected").length,total=g.length,pct=Math.round(ok/total*100);return `<tr><td>${formatDate(g[0].date)}</td><td>${esc(g[0].cliente)}</td><td>${esc(g[0].oficina)}</td><td>${ok}</td><td>${total-ok}</td><td><b>${pct}%</b></td><td>${esc(g[0].registeredBy||"")}</td></tr>`}).join("");return rows||`<tr><td colspan="7">Sin reportes registrados.</td></tr>`}
 
-function userApprovals(c){
+async function userApprovals(c){
  if(!current.mainAdmin){c.innerHTML='<div class="card"><h2>Acceso restringido</h2><p>Solo el administrador principal puede aprobar usuarios.</p></div>';return}
+ if(window.SYRUEN_SYNC?.hydrate) await window.SYRUEN_SYNC.hydrate();
  let u=users(), pending=u.filter(x=>x.status==="pending"), active=u.filter(x=>x.status==="active"), rejected=u.filter(x=>x.status==="rejected"), inactive=u.filter(x=>x.status==="inactive");
  c.innerHTML='<div class="page-head"><div><h2>Solicitudes de usuarios</h2><div class="muted">Un solo administrador principal controla las altas y bajas de SYRUEN.</div></div></div>'+
  '<div class="grid"><div class="card span3"><div>Pendientes</div><div class="kpi">'+pending.length+'</div></div><div class="card span3"><div>Activos</div><div class="kpi">'+active.length+'</div></div><div class="card span3"><div>No aprobados</div><div class="kpi">'+rejected.length+'</div></div><div class="card span3"><div>Dados de baja</div><div class="kpi">'+inactive.length+'</div></div></div>'+
