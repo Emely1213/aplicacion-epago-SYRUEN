@@ -266,25 +266,26 @@ async function userApprovals(c){
  if(!current.mainAdmin){c.innerHTML='<div class="card"><h2>Acceso restringido</h2><p>Solo el administrador principal puede aprobar usuarios.</p></div>';return}
  if(window.SYRUEN_SYNC?.hydrate) await window.SYRUEN_SYNC.hydrate();
  let u=users(), pending=u.filter(x=>x.status==="pending"), active=u.filter(x=>x.status==="active"), rejected=u.filter(x=>x.status==="rejected"), inactive=u.filter(x=>x.status==="inactive");
- c.innerHTML='<div class="page-head"><div><h2>Solicitudes de usuarios</h2><div class="muted">Aquí puedes aprobar, rechazar y dar de baja usuarios. Los pendientes se muestran también como tarjetas para facilitar el uso desde el celular.</div></div></div>'+
- '<div class="grid">'+
- '<div class="card span3 user-kpi-card" id="pendingCard" style="cursor:pointer"><div>Pendientes</div><div class="kpi">'+pending.length+'</div><small>Ver solicitudes</small></div>'+
- '<div class="card span3"><div>Activos</div><div class="kpi">'+active.length+'</div></div>'+
- '<div class="card span3"><div>No aprobados</div><div class="kpi">'+rejected.length+'</div></div>'+
- '<div class="card span3"><div>Dados de baja</div><div class="kpi">'+inactive.length+'</div></div></div>'+
- '<div class="card active-users-panel" style="margin-top:14px"><h3>Usuarios activos</h3><div class="muted" style="margin-bottom:10px">El administrador principal está protegido y no puede darse de baja.</div>'+
- '<div class="table-wrap"><table class="table"><thead><tr><th>Usuario</th><th>Nombre completo</th><th>Perfil</th><th>Correo</th><th>Teléfono</th><th>Fecha aprobación</th><th>Acción</th></tr></thead><tbody>'+
- active.map(x=>'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.name)+'</td><td>'+esc(roles[x.role]?.name||x.role)+'</td><td>'+esc(x.email)+'</td><td>'+esc(x.phone||x.contact||"No registrado")+'</td><td>'+(x.approvedAt?new Date(x.approvedAt).toLocaleString("es-CO"):"")+'</td><td>'+(x.mainAdmin?'<span class="muted">Administrador principal · Protegido</span>':'<button class="danger small" onclick="deactivateUser(\''+esc(x.username)+'\')">Dar de baja</button>')+'</td></tr>').join("")||'<tr><td colspan="7">No hay usuarios activos.</td></tr>'+
- '</tbody></table></div></div>'+
- '<div class="card pending-panel" id="pendingPanel" style="margin-top:14px"><h3>Solicitudes pendientes</h3>'+
- '<div class="pending-user-list">'+
- pending.map(x=>'<div class="pending-user-card"><div class="pending-user-info"><strong>'+esc(x.username)+'</strong><b>'+esc(x.name)+'</b><span>'+esc(roles[x.role]?.name||x.role)+'</span><span>'+esc(x.email)+'</span><small>'+(x.requestedAt?new Date(x.requestedAt).toLocaleString("es-CO"):"")+'</small></div><div class="actions pending-actions"><button class="primary" type="button" onclick="approveUser(\''+esc(x.username)+'\')">✓ Aprobar</button><button class="danger" type="button" onclick="rejectUser(\''+esc(x.username)+'\')">✕ Rechazar</button></div></div>').join("")||
- '<p class="muted">No hay solicitudes pendientes.</p>'+
+ c.innerHTML='<div class="page-head"><div><h2>Solicitudes de usuarios</h2><div class="muted">Administra solicitudes, usuarios activos, no aprobados y dados de baja.</div></div></div>'+
+ '<div class="grid user-status-nav">'+
+ '<div class="card span3 user-kpi-card" data-panel="pendingPanel"><div>Pendientes</div><div class="kpi">'+pending.length+'</div><small>Ver solicitudes</small></div>'+
+ '<div class="card span3 user-kpi-card" data-panel="activePanel"><div>Activos</div><div class="kpi">'+active.length+'</div><small>Ver usuarios activos</small></div>'+
+ '<div class="card span3 user-kpi-card" data-panel="rejectedPanel"><div>No aprobados</div><div class="kpi">'+rejected.length+'</div><small>Ver no aprobados</small></div>'+
+ '<div class="card span3 user-kpi-card" data-panel="inactivePanel"><div>Dados de baja</div><div class="kpi">'+inactive.length+'</div><small>Ver histórico de bajas</small></div></div>'+
+ '<div class="user-panels">'+
+ '<div class="card user-panel" id="pendingPanel"><h3>Solicitudes pendientes</h3><div class="pending-user-list">'+
+ pending.map(x=>'<div class="pending-user-card"><div class="pending-user-info"><strong>'+esc(x.username)+'</strong><b>'+esc(x.name)+'</b><span>'+esc(roles[x.role]?.name||x.role)+'</span><span>'+esc(x.email)+'</span><small>'+(x.requestedAt?new Date(x.requestedAt).toLocaleString("es-CO"):"")+'</small></div><div class="actions pending-actions"><button class="primary" type="button" onclick="approveUser(\''+esc(x.username)+'\')">✓ Aprobar</button><button class="danger" type="button" onclick="rejectUser(\''+esc(x.username)+'\')">✕ Rechazar</button></div></div>').join("")||'<p class="muted">No hay solicitudes pendientes.</p>'+
  '</div></div>'+
- '<div class="card table-wrap" style="margin-top:14px"><h3>Usuarios registrados e histórico</h3><div class="muted" style="margin-bottom:10px">Los usuarios dados de baja permanecen en el histórico y no pueden ingresar.</div><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Estado</th><th>Fecha baja</th><th>Acciones</th></tr></thead><tbody>'+
- u.map(x=>'<tr><td>'+esc(x.username)+'</td><td>'+esc(x.name)+'</td><td>'+esc(roles[x.role]?.name||x.role)+'</td><td>'+esc(x.email)+'</td><td>'+(x.mainAdmin?"Administrador principal":esc(x.status))+'</td><td>'+(x.deactivatedAt?new Date(x.deactivatedAt).toLocaleString("es-CO"):"")+'</td><td>'+(x.mainAdmin?'<span class="muted">Protegido</span>':x.status==="active"?'<button class="danger small" type="button" onclick="deactivateUser(\''+esc(x.username)+'\')">Dar de baja</button>':x.status==="inactive"?'<span class="muted">Dado de baja</span>':x.status==="rejected"?'<span class="muted">No aprobado</span>':"")+'</td></tr>').join("")+
- '</tbody></table></div>';
- const pc=$("#pendingCard"); if(pc) pc.onclick=()=>$("#pendingPanel")?.scrollIntoView({behavior:"smooth",block:"start"});
+ '<div class="card user-panel" id="activePanel"><h3>Usuarios activos</h3><div class="table-wrap"><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Teléfono</th><th>Fecha aprobación</th><th>Acción</th></tr></thead><tbody>'+
+ active.map(x=>'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.name)+'</td><td>'+esc(roles[x.role]?.name||x.role)+'</td><td>'+esc(x.email)+'</td><td>'+esc(x.phone||"No registrado")+'</td><td>'+(x.approvedAt?new Date(x.approvedAt).toLocaleString("es-CO"):"")+'</td><td>'+(x.mainAdmin?'<span class="muted">Administrador principal · Protegido</span>':'<button class="danger small" type="button" onclick="deactivateUser(\''+esc(x.username)+'\')">Dar de baja</button>')+'</td></tr>').join("")||'<tr><td colspan="7">No hay usuarios activos.</td></tr>'+
+ '</tbody></table></div></div>'+
+ '<div class="card user-panel" id="rejectedPanel"><h3>Usuarios no aprobados</h3><div class="pending-user-list">'+
+ rejected.map(x=>'<div class="pending-user-card"><div class="pending-user-info"><strong>'+esc(x.username)+'</strong><b>'+esc(x.name)+'</b><span>'+esc(roles[x.role]?.name||x.role)+'</span><span>'+esc(x.email)+'</span><small>Rechazado: '+(x.rejectedAt?new Date(x.rejectedAt).toLocaleString("es-CO"):"")+'</small><small>Motivo: '+esc(x.rejectionReason||"No especificado")+'</small></div><div class="actions pending-actions"><button class="primary" type="button" onclick="restoreUser(\''+esc(x.username)+'\')">↻ Volver a pendiente</button></div></div>').join("")||'<p class="muted">No hay usuarios no aprobados.</p>'+
+ '</div></div>'+
+ '<div class="card user-panel" id="inactivePanel"><h3>Usuarios dados de baja</h3><div class="pending-user-list">'+
+ inactive.map(x=>'<div class="pending-user-card"><div class="pending-user-info"><strong>'+esc(x.username)+'</strong><b>'+esc(x.name)+'</b><span>'+esc(roles[x.role]?.name||x.role)+'</span><span>'+esc(x.email)+'</span><small>Dado de baja: '+(x.deactivatedAt?new Date(x.deactivatedAt).toLocaleString("es-CO"):"")+'</small><small>Motivo: '+esc(x.deactivationReason||"No especificado")+'</small></div><div class="actions pending-actions"><button class="primary" type="button" onclick="reactivateUser(\''+esc(x.username)+'\')">↻ Reactivar usuario</button></div></div>').join("")||'<p class="muted">No hay usuarios dados de baja.</p>'+
+ '</div></div></div>';
+ document.querySelectorAll('.user-kpi-card[data-panel]').forEach(card=>card.onclick=()=>{const target=document.getElementById(card.dataset.panel);if(target)target.scrollIntoView({behavior:'smooth',block:'start'})});
 }
 window.approveUser=async username=>{
   let u=users(),x=u.find(v=>v.username===username);if(!x)return;
@@ -293,6 +294,24 @@ window.approveUser=async username=>{
   const ok=await save(USERS,u); if(!ok)return toast("No se pudo guardar la aprobación en Supabase.");
   notifyUser(x,"approved");
   userApprovals($("#content"));toast("Usuario aprobado y guardado correctamente.");
+};
+window.restoreUser=async username=>{
+ if(!current?.mainAdmin)return toast('Solo el administrador principal puede realizar esta acción.');
+ let u=users(),x=u.find(v=>v.username===username);if(!x)return;
+ if(x.status!=='rejected')return toast('El usuario no está en estado no aprobado.');
+ if(!confirm('¿Volver a poner a '+x.username+' como solicitud pendiente?'))return;
+ x.status='pending';x.restoredAt=new Date().toISOString();x.restoredBy=current.username;
+ const ok=await save(USERS,u);if(!ok)return toast('No se pudo guardar el cambio en Supabase.');
+ userApprovals($('#content'));toast('Usuario devuelto a solicitudes pendientes.');
+};
+window.reactivateUser=async username=>{
+ if(!current?.mainAdmin)return toast('Solo el administrador principal puede realizar esta acción.');
+ let u=users(),x=u.find(v=>v.username===username);if(!x)return;
+ if(x.status!=='inactive')return toast('El usuario no está dado de baja.');
+ if(!confirm('¿Reactivar a '+x.username+'? Volverá a tener acceso a SYRUEN.'))return;
+ x.status='active';x.reactivatedAt=new Date().toISOString();x.reactivatedBy=current.username;
+ const ok=await save(USERS,u);if(!ok)return toast('No se pudo guardar la reactivación en Supabase.');
+ userApprovals($('#content'));toast('Usuario reactivado correctamente.');
 };
 window.deactivateUser=async username=>{
   if(!current?.mainAdmin)return toast('Solo el administrador principal puede dar de baja usuarios.');
