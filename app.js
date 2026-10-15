@@ -1,4 +1,5 @@
 const $=s=>document.querySelector(s);
+const app=document.getElementById("app");
 const STORE="syruen_v4_data";
 const USERS="syruen_v4_users";
 const sessionKey="syruen_v4_session";
