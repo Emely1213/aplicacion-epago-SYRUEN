@@ -110,6 +110,7 @@ async function cleanupSYR0002(){
   if(!current?.mainAdmin)return;
   const q=new URLSearchParams(location.search);
   if(q.get("cleanup")!=="SYR-0002")return;
+  if(window.SYRUEN_SUPABASE_READY) await window.SYRUEN_SUPABASE_READY;
   let u=users();
   if(!u.some(x=>x.username==="SYR-0002")){history.replaceState({},document.title,location.pathname);return;}
   u=u.filter(x=>x.username!=="SYR-0002");
