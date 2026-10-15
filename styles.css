@@ -106,3 +106,33 @@ input,select,textarea,button{max-width:100%;min-width:0}
   .main{padding:30px 36px}
   .splash-card{max-width:820px}
 }
+
+/* ===== Mobile / tablet layout fix ===== */
+@media(max-width:900px){
+  html,body{width:100%;overflow-x:hidden}
+  .top{height:auto;min-height:62px;padding:10px 12px;flex-wrap:wrap}
+  .layout{display:block;min-height:0}
+  .side{width:100%;display:flex;gap:5px;padding:8px;overflow-x:auto;overflow-y:hidden;position:sticky;top:0;z-index:6;white-space:nowrap}
+  .side button{width:auto;min-width:max-content;margin:0;padding:9px 11px}
+  .main{width:100%;padding:12px;overflow:visible}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .span3,.span4{grid-column:span 1}
+  .table-wrap{width:100%;overflow-x:auto}
+}
+@media(max-width:650px){
+  .grid{grid-template-columns:1fr}
+  .span3,.span4,.span6,.span12{grid-column:1/-1}
+  .table{min-width:650px}
+  .active-users-panel .active-users-table{display:none}
+  .active-user-cards{display:grid;gap:10px}
+  .active-user-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+  .active-user-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .active-user-name{font-size:16px;font-weight:800;margin-top:7px}
+  .active-user-detail{font-size:13px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+  .active-user-date{font-size:12px;color:var(--muted);margin-top:8px}
+  .active-user-action{margin-top:10px}
+  .active-user-action button{width:100%}
+}
+@media(min-width:651px){
+  .active-user-cards{display:none}
+}
