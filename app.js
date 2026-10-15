@@ -47,7 +47,7 @@ app.innerHTML=`<div class="auth"><div class="auth-card">
 </div>
 <button class="secondary wide" id="back">Volver al bienvenida</button>
 </div></div>`;
-$("#go").onclick=()=>{let x=users().find(v=>v.username===$("#u").value.trim()&&v.password===$("#p").value);if(!x)return toast("Usuario o contraseña incorrectos");if(x.status!=="active")return toast(x.status==="pending"?"Su usuario está pendiente de aprobación.":"Su usuario no fue aprobado.");current=x;sessionStorage.setItem(sessionKey,JSON.stringify(x));tab=roles[x.role].tabs[0][0];render()};
+$("#go").onclick=()=>{let x=users().find(v=>v.username===$("#u").value.trim()&&v.password===$("#p").value);if(!x)return toast("Usuario o contraseña incorrectos");if(x.status!=="active")return toast(x.status==="pending"?"Su usuario está pendiente de aprobación.":x.status==="inactive"?"Su usuario fue dado de baja por el administrador.":"Su usuario no fue aprobado.");current=x;sessionStorage.setItem(sessionKey,JSON.stringify(x));tab=roles[x.role].tabs[0][0];render()};
 $("#reg").onclick=register;
 $("#forgot").onclick=forgotPassword;
 $("#back").onclick=splash
@@ -260,12 +260,16 @@ function cctvReport(c){
 function buildCctvHistory(arr){let groups={};arr.forEach(x=>{let k=x.date+"|"+x.cliente+"|"+x.codigo;(groups[k]??=[]).push(x)});let rows=Object.values(groups).sort((a,b)=>(b[0].date||"").localeCompare(a[0].date||"")).map(g=>{let ok=g.filter(x=>x.status==="connected").length,total=g.length,pct=Math.round(ok/total*100);return `<tr><td>${formatDate(g[0].date)}</td><td>${esc(g[0].cliente)}</td><td>${esc(g[0].oficina)}</td><td>${ok}</td><td>${total-ok}</td><td><b>${pct}%</b></td><td>${esc(g[0].registeredBy||"")}</td></tr>`}).join("");return rows||`<tr><td colspan="7">Sin reportes registrados.</td></tr>`}
 
 function userApprovals(c){
- if(!current.mainAdmin){c.innerHTML=`<div class="card"><h2>Acceso restringido</h2><p>Solo el administrador principal puede aprobar usuarios.</p></div>`;return}
- let u=users(), pending=u.filter(x=>x.status==="pending"), active=u.filter(x=>x.status==="active"), rejected=u.filter(x=>x.status==="rejected");
- c.innerHTML=`<div class="page-head"><div><h2>Solicitudes de usuarios</h2><div class="muted">Un solo administrador principal controla las altas de SYRUEN.</div></div></div>
- <div class="grid"><div class="card span4"><div>Pendientes</div><div class="kpi">${pending.length}</div></div><div class="card span4"><div>Activos</div><div class="kpi">${active.length}</div></div><div class="card span4"><div>No aprobados</div><div class="kpi">${rejected.length}</div></div></div>
- <div class="card table-wrap"><h3>Solicitudes pendientes</h3><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>${pending.map(x=>`<tr><td>${esc(x.username)}</td><td>${esc(x.name)}</td><td>${esc(roles[x.role]?.name||x.role)}</td><td>${esc(x.email)}</td><td>${x.requestedAt?new Date(x.requestedAt).toLocaleString("es-CO"):""}</td><td><button class="primary small" onclick="approveUser('${esc(x.username)}')">Aprobar</button> <button class="danger small" onclick="rejectUser('${esc(x.username)}')">Rechazar</button></td></tr>`).join("")||`<tr><td colspan="6">No hay solicitudes pendientes.</td></tr>`}</tbody></table></div>
- <div class="card table-wrap" style="margin-top:14px"><h3>Usuarios registrados</h3><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Estado</th></tr></thead><tbody>${u.map(x=>`<tr><td>${esc(x.username)}</td><td>${esc(x.name)}</td><td>${esc(roles[x.role]?.name||x.role)}</td><td>${esc(x.email)}</td><td>${x.mainAdmin?"Administrador principal":x.status}</td></tr>`).join("")}</tbody></table></div>`;
+ if(!current.mainAdmin){c.innerHTML='<div class="card"><h2>Acceso restringido</h2><p>Solo el administrador principal puede aprobar usuarios.</p></div>';return}
+ let u=users(), pending=u.filter(x=>x.status==="pending"), active=u.filter(x=>x.status==="active"), rejected=u.filter(x=>x.status==="rejected"), inactive=u.filter(x=>x.status==="inactive");
+ c.innerHTML='<div class="page-head"><div><h2>Solicitudes de usuarios</h2><div class="muted">Un solo administrador principal controla las altas y bajas de SYRUEN.</div></div></div>'+
+ '<div class="grid"><div class="card span3"><div>Pendientes</div><div class="kpi">'+pending.length+'</div></div><div class="card span3"><div>Activos</div><div class="kpi">'+active.length+'</div></div><div class="card span3"><div>No aprobados</div><div class="kpi">'+rejected.length+'</div></div><div class="card span3"><div>Dados de baja</div><div class="kpi">'+inactive.length+'</div></div></div>'+
+ '<div class="card table-wrap"><h3>Solicitudes pendientes</h3><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>'+
+ pending.map(x=>'<tr><td>'+esc(x.username)+'</td><td>'+esc(x.name)+'</td><td>'+esc(roles[x.role]?.name||x.role)+'</td><td>'+esc(x.email)+'</td><td>'+(x.requestedAt?new Date(x.requestedAt).toLocaleString("es-CO"):"")+'</td><td><button class="primary small" onclick="approveUser(\''+esc(x.username)+\'")">Aprobar</button> <button class="danger small" onclick="rejectUser(\''+esc(x.username)+\'")">Rechazar</button></td></tr>').join("")||'<tr><td colspan="6">No hay solicitudes pendientes.</td></tr>'+
+ '</tbody></table></div>'+
+ '<div class="card table-wrap" style="margin-top:14px"><h3>Usuarios registrados e histórico</h3><div class="muted" style="margin-bottom:10px">Los usuarios dados de baja permanecen en el histórico y no pueden ingresar.</div><table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Estado</th><th>Fecha baja</th><th>Acciones</th></tr></thead><tbody>'+
+ u.map(x=>'<tr><td>'+esc(x.username)+'</td><td>'+esc(x.name)+'</td><td>'+esc(roles[x.role]?.name||x.role)+'</td><td>'+esc(x.email)+'</td><td>'+(x.mainAdmin?"Administrador principal":esc(x.status))+'</td><td>'+(x.deactivatedAt?new Date(x.deactivatedAt).toLocaleString("es-CO"):"")+'</td><td>'+(x.mainAdmin?'<span class="muted">Protegido</span>':x.status==="active"?'<button class="danger small" onclick="deactivateUser(\''+esc(x.username)+'\')">Dar de baja</button>':x.status==="inactive"?'<span class="muted">Dado de baja</span>':x.status==="rejected"?'<span class="muted">No aprobado</span>':"")+'</td></tr>').join("")+
+ '</tbody></table></div>';
 }
 window.approveUser=async username=>{
   let u=users(),x=u.find(v=>v.username===username);if(!x)return;
@@ -274,6 +278,17 @@ window.approveUser=async username=>{
   const ok=await save(USERS,u); if(!ok)return toast("No se pudo guardar la aprobación en Supabase.");
   notifyUser(x,"approved");
   userApprovals($("#content"));toast("Usuario aprobado y guardado correctamente.");
+};
+window.deactivateUser=async username=>{
+  if(!current?.mainAdmin)return toast('Solo el administrador principal puede dar de baja usuarios.');
+  let u=users(),x=u.find(v=>v.username===username);if(!x)return;
+  if(x.mainAdmin)return toast('El administrador principal no puede darse de baja.');
+  if(x.status!=='active')return toast('El usuario no está activo.');
+  if(!confirm('¿Dar de baja a '+x.name+' ('+x.username+')? El usuario conservará su histórico pero no podrá ingresar.'))return;
+  const reason=prompt('Motivo de la baja (opcional):','');if(reason===null)return;
+  x.status='inactive';x.deactivatedAt=new Date().toISOString();x.deactivatedBy=current.username;x.deactivationReason=reason;
+  const ok=await save(USERS,u);if(!ok)return toast('No se pudo guardar la baja en Supabase.');
+  userApprovals($('#content'));toast('Usuario dado de baja. Su histórico se conserva.');
 };
 window.rejectUser=async username=>{
   let u=users(),x=u.find(v=>v.username===username);if(!x)return;
