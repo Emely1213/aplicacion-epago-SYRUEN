@@ -4,12 +4,12 @@ const STORE="syruen_v4_data";
 const USERS="syruen_v4_users";
 const sessionKey="syruen_v4_session";
 const roles={
-remoto:{name:"Remoto",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["mis","Mis tickets","my"],["historico","Histórico y comentarios","history"]]},
-brinks:{name:"Brinks",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["mis","Mis tickets","my"],["historico","Histórico y comentarios","history"]]},
-jefe:{name:"Jefe Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["mis","Mis tickets","my"],["historico","Histórico","history"],["dashboard","Dashboard","dashboard"],["cctv","Reporte de conexión CCTV","cctv"],["gestiones","Gestiones internas","gestiones"]]},
-omt:{name:"OMT Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["casos","Casos asignados","cases"],["sedes","Sedes / maestro","sites"],["implementaciones","Implementaciones","implement"],["desmontes","Desmontes","dismantle"],["almacen","Almacén / logístico","inventory"],["resueltos","Resueltos","resolved"],["visitantes","Visitantes","visitors"],["indicadores","Indicadores","dashboard"],["cctv","Reporte de conexión CCTV","cctv"],["historico","Histórico","history"],["gestiones","Gestiones","gestiones"]]},
-analista:{name:"Analista Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["casos","Casos asignados","cases"],["sedes","Sedes / maestro","sites"],["implementaciones","Implementaciones","implement"],["desmontes","Desmontes","dismantle"],["almacen","Almacén / logístico","inventory"],["resueltos","Resueltos","resolved"],["visitantes","Visitantes","visitors"],["indicadores","Indicadores","dashboard"],["cctv","Reporte de conexión CCTV","cctv"],["historico","Histórico","history"],["gestiones","Gestiones","gestiones"]]},
-crypto:{name:"Crypto Pro Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["casos","Casos asignados","cases"],["sedes","Sedes / maestro","sites"],["implementaciones","Implementaciones","implement"],["desmontes","Desmontes","dismantle"],["almacen","Almacén / logístico","inventory"],["resueltos","Resueltos","resolved"],["visitantes","Visitantes","visitors"],["indicadores","Indicadores","dashboard"],["crypto","Control Crypto Pro","crypto"],["historico","Histórico","history"],["gestiones","Gestiones","gestiones"]]}
+remoto:{name:"Remoto",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["mis","Mis tickets","my"],["historico","Histórico y comentarios","history"],["perfil","Mi perfil","profile"]]},
+brinks:{name:"Brinks",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["mis","Mis tickets","my"],["historico","Histórico y comentarios","history"],["dashboard","Dashboard","dashboard"],["perfil","Mi perfil","profile"]]},
+jefe:{name:"Jefe Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["mis","Mis tickets","my"],["historico","Histórico","history"],["dashboard","Dashboard","dashboard"],["cctv","Reporte de conexión CCTV","cctv"],["gestiones","Gestiones internas","gestiones"],["perfil","Mi perfil","profile"]]},
+omt:{name:"OMT Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["casos","Casos asignados","cases"],["sedes","Sedes / maestro","sites"],["implementaciones","Implementaciones","implement"],["desmontes","Desmontes","dismantle"],["almacen","Almacén / logístico","inventory"],["resueltos","Resueltos","resolved"],["visitantes","Visitantes","visitors"],["indicadores","Indicadores","dashboard"],["cctv","Reporte de conexión CCTV","cctv"],["historico","Histórico","history"],["gestiones","Gestiones","gestiones"],["perfil","Mi perfil","profile"]]},
+analista:{name:"Analista Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["casos","Casos asignados","cases"],["sedes","Sedes / maestro","sites"],["implementaciones","Implementaciones","implement"],["desmontes","Desmontes","dismantle"],["almacen","Almacén / logístico","inventory"],["resueltos","Resueltos","resolved"],["visitantes","Visitantes","visitors"],["indicadores","Indicadores","dashboard"],["cctv","Reporte de conexión CCTV","cctv"],["historico","Histórico","history"],["gestiones","Gestiones","gestiones"],["perfil","Mi perfil","profile"]]},
+crypto:{name:"Crypto Pro Admin",tabs:[["inicio","Inicio operativo","home"],["tickets","Registrar novedad / ticket","ticket"],["casos","Casos asignados","cases"],["sedes","Sedes / maestro","sites"],["implementaciones","Implementaciones","implement"],["desmontes","Desmontes","dismantle"],["almacen","Almacén / logístico","inventory"],["resueltos","Resueltos","resolved"],["visitantes","Visitantes","visitors"],["indicadores","Indicadores","dashboard"],["crypto","Control Crypto Pro","crypto"],["historico","Histórico","history"],["gestiones","Gestiones","gestiones"],["perfil","Mi perfil","profile"]]}
 };
 const defaultOffices=[
 {codigo:"PY001",cliente:"PYC",oficina:"PYC Bogotá Centro",ip:"10.10.1.20",serial:"HIK-PYC-001",sim:"3000000001",celular:"3100000001",ciudad:"Bogotá",direccion:"Carrera 10 # 20-30",departamento:"Bogotá D.C.",regional:"Centro",ponal:"PONAL-001",cupo:"X",canales:16,dvrs:2,coordinador:{nombre:"Coordinador Centro",celular:"3110000001",correo:"coordinador.centro@empresa.com"},regionalContacto:{nombre:"Regional Centro",celular:"3120000001",correo:"regional.centro@empresa.com"}},
@@ -108,8 +108,48 @@ $("#saveUser").onclick=async()=>{
 $("#cancel").onclick=splash
 }
 function field(label,id,type="text"){return `<div class="field"><label>${label}</label><input id="${id}" type="${type}"></div>`}
+function profile(c){
+  const u=users().find(x=>x.username===current.username)||current;
+  c.innerHTML=`<div class="page-head"><div><h2>Mi perfil</h2><div class="muted">Actualiza tus datos personales y cambia tu contraseña sin modificar tu perfil de acceso.</div></div></div>
+  <div class="card"><h3>Datos personales</h3><div class="form-grid">
+  <div class="field"><label>Usuario</label><input id="pfUsername" value="${esc(u.username||"")}" readonly></div>
+  <div class="field"><label>Perfil / Rol</label><input id="pfRole" value="${esc(roles[u.role]?.name||u.role||"")}" readonly></div>
+  <div class="field"><label>Nombre completo</label><input id="pfName" value="${esc(u.name||"")}"></div>
+  <div class="field"><label>Cargo</label><input id="pfCargo" value="${esc(u.cargo||"")}"></div>
+  <div class="field"><label>Correo personal</label><input id="pfPersonal" type="email" value="${esc(u.personalEmail||"")}"></div>
+  <div class="field"><label>Correo corporativo</label><input id="pfEmail" type="email" value="${esc(u.email||"")}"></div>
+  <div class="field"><label>Número de contacto</label><input id="pfPhone" value="${esc(u.phone||"")}"></div>
+  <div class="field"><label>WhatsApp</label><input id="pfWhatsapp" value="${esc(u.whatsapp||"")}"></div>
+  </div><div class="actions"><button class="primary" id="saveProfile">Actualizar datos</button></div></div>
+  <div class="card" style="margin-top:14px"><h3>Cambiar contraseña</h3><p class="muted">Por seguridad, confirma tu contraseña actual antes de establecer una nueva.</p><div class="form-grid">
+  <div class="field"><label>Contraseña actual</label><input id="pfCurrentPass" type="password" autocomplete="current-password"></div>
+  <div class="field"><label>Nueva contraseña</label><input id="pfNewPass" type="password" autocomplete="new-password"></div>
+  <div class="field"><label>Confirmar nueva contraseña</label><input id="pfConfirmPass" type="password" autocomplete="new-password"></div>
+  </div><div class="actions"><button class="primary" id="changePassword">Cambiar contraseña</button></div></div>`;
+  $("#saveProfile").onclick=async()=>{
+    const list=users(),x=list.find(v=>v.username===current.username);if(!x)return toast("No se encontró el usuario.");
+    const name=$("#pfName").value.trim(),email=$("#pfEmail").value.trim();
+    if(!name||!email)return toast("Nombre y correo corporativo son obligatorios.");
+    x.name=name;x.cargo=$("#pfCargo").value.trim();x.personalEmail=$("#pfPersonal").value.trim();x.email=email;x.phone=$("#pfPhone").value.trim();x.whatsapp=$("#pfWhatsapp").value.trim();x.profileUpdatedAt=new Date().toISOString();
+    const ok=await save(USERS,list);if(!ok)return toast("No se pudieron guardar los datos.");
+    current={...x};sessionStorage.setItem(sessionKey,JSON.stringify(current));toast("Datos actualizados correctamente.");render();
+  };
+  $("#changePassword").onclick=async()=>{
+    const list=users(),x=list.find(v=>v.username===current.username);if(!x)return toast("No se encontró el usuario.");
+    const old=$("#pfCurrentPass").value,newP=$("#pfNewPass").value,confirmP=$("#pfConfirmPass").value;
+    if(old!==x.password)return toast("La contraseña actual no coincide.");
+    if(newP.length<6)return toast("La nueva contraseña debe tener mínimo 6 caracteres.");
+    if(newP!==confirmP)return toast("La confirmación de contraseña no coincide.");
+    if(newP===old)return toast("La nueva contraseña debe ser diferente.");
+    x.password=newP;x.passwordUpdatedAt=new Date().toISOString();
+    const ok=await save(USERS,list);if(!ok)return toast("No se pudo guardar la nueva contraseña.");
+    current={...x};sessionStorage.setItem(sessionKey,JSON.stringify(current));
+    $("#pfCurrentPass").value="";$("#pfNewPass").value="";$("#pfConfirmPass").value="";
+    toast("Contraseña cambiada correctamente.");
+  };
+}
 function render(){let r=roles[current.role];let tabs=[...r.tabs];if(current.mainAdmin)tabs.push(["usuarios","Solicitudes de usuarios","users"]);app.innerHTML=`<div class="top"><div class="brand"><div class="brand-mark">SY</div><span>SYRUEN</span></div><div class="userbar">${esc(current.name||current.username)} · ${r.name}${current.mainAdmin?" · Administrador principal":""}<button class="secondary" id="logout">Salir</button></div></div><div class="layout"><aside class="side">${tabs.map(t=>`<button class="${tab===t[0]?"active":""}" data-tab="${t[0]}">${t[1]}</button>`).join("")}</aside><div class="mobile-nav"><label for="mobileTab">Módulo</label><select id="mobileTab">${tabs.map(t=>`<option value="${t[0]}" ${tab===t[0]?"selected":""}>${t[1]}</option>`).join("")}</select></div><main class="main" id="content"></main></div>`;document.querySelectorAll(".side [data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$("#mobileTab").onchange=e=>{tab=e.target.value;render()};$("#logout").onclick=()=>{current=null;sessionStorage.removeItem(sessionKey);login()};page(tab)}
-function page(t){const c=$("#content");if(t==="inicio")return home(c);if(t==="tickets")return ticket(c);if(t==="mis")return listTickets(c,true);if(t==="historico")return history(c);if(t==="casos")return cases(c);if(t==="sedes")return sites(c);if(t==="implementaciones")return generic(c,"Implementaciones","implementations");if(t==="desmontes")return generic(c,"Desmontes","dismantles");if(t==="almacen")return inventory(c);if(t==="resueltos")return resolved(c);if(t==="visitantes")return visitors(c);if(t==="indicadores"||t==="dashboard")return dashboard(c);if(t==="cctv")return cctvReport(c);if(t==="gestiones")return generic(c,"Gestiones internas","gestiones");if(t==="usuarios")return userApprovals(c);if(t==="crypto")return generic(c,"Control Crypto Pro","crypto")}
+function page(t){const c=$("#content");if(t==="inicio")return home(c);if(t==="tickets")return ticket(c);if(t==="mis")return listTickets(c,true);if(t==="historico")return history(c);if(t==="casos")return cases(c);if(t==="sedes")return sites(c);if(t==="implementaciones")return generic(c,"Implementaciones","implementations");if(t==="desmontes")return generic(c,"Desmontes","dismantles");if(t==="almacen")return inventory(c);if(t==="resueltos")return resolved(c);if(t==="visitantes")return visitors(c);if(t==="indicadores"||t==="dashboard")return dashboard(c);if(t==="cctv")return cctvReport(c);if(t==="gestiones")return generic(c,"Gestiones internas","gestiones");if(t==="usuarios")return userApprovals(c);if(t==="crypto")return generic(c,"Control Crypto Pro","crypto");if(t==="perfil")return profile(c)}
 function home(c){let d=db();c.innerHTML=`<div class="page-head"><div><h2>Inicio operativo</h2><div class="muted">Panel de trabajo de ${roles[current.role].name}</div></div></div><div class="grid"><div class="card span3"><div>Tickets</div><div class="kpi">${d.tickets.length}</div></div><div class="card span3"><div>Sedes</div><div class="kpi">${d.offices.length}</div></div><div class="card span3"><div>Implementaciones</div><div class="kpi">${d.implementations.length}</div></div><div class="card span3"><div>Resueltos</div><div class="kpi">${d.resolved.length}</div></div></div>`}
 function ticket(c){let d=db();
 c.innerHTML=`<div class="page-head"><div><h2>Registrar novedad / ticket</h2><div class="muted">La información de la sede se carga automáticamente desde el maestro.</div></div></div>
